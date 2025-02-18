@@ -12,6 +12,15 @@ class DatabaseSettings(BaseSettings):
     DB_ECHO: bool = False
     DB_MAX_OVERFLOW: int = 10
 
+    @property
+    def BASE_MYSQL_URL(self) -> str:
+        return f"{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+
+    @property
+    def SQLALCHEMY_DATABASE_URL_ASYNC(self) -> str:
+        # asyncmy не ставится на M1
+        return f"mysql+aiomysql://{self.BASE_MYSQL_URL}"
+
 
 class RedisSettings(BaseSettings):
     REDIS_HOST: str = "redis"

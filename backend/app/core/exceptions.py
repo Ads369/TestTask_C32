@@ -21,8 +21,3 @@ class RedisConnectionError(HTTPException):
 class RedisDataError(HTTPException):
     def __init__(self, message: str):
         super().__init__(status_code=503, detail=f"Redis data error: {message}")
-
-
-class RedisKeyNotFoundError(HTTPException):
-    def __init__(self, key: str):
-        super().__init__(status_code=404, detail=f"Redis key not found: {key}")
