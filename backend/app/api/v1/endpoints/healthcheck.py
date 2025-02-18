@@ -1,5 +1,10 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
+from fastapi.params import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
+from app.db.mysql import get_async_db, get_db
+from app.db.redis import RedisRepository, get_redis
 from app.schemas.healthcheck import HealthCheckResponse
 from app.services.health_checker import health_checker
 
@@ -12,11 +17,14 @@ router = APIRouter()
     status_code=status.HTTP_200_OK,
     summary="Проверка состояния сервиса",
 )
-async def health_check():
+async def health_check(
+    database: AsyncSession = Depends(get_db),
+    redis: RedisRepository = Depends(get_redis),
+):
     """Проверка доступности сервиса и его зависимостей"""
     checks = {
-        "database": await health_checker.check_database(),
-        "redis": await health_checker.check_redis(),
+        "database": await health_checker.check_database(database),
+        "redis": await health_checker.check_redis(redis),
     }
 
     overall_status = (
@@ -34,7 +42,6 @@ async def health_check():
 
 @router.get(
     "/health/logs",
-    # status_code=status.HTTP_200_OK,
     summary="Проверка логов сервиса",
 )
 async def log_example():
