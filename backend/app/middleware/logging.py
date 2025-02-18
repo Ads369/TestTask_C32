@@ -2,14 +2,13 @@ import time
 import uuid
 
 from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from app.core.logger import logger
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        # Generate a unique request ID and store it in the request state
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
         request_id = str(uuid.uuid4())
         request.state.request_id = request_id
 
