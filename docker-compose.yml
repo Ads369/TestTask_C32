@@ -16,6 +16,23 @@ services:
       - mysql
       - redis
 
+  tests:
+    container_name: tests
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: pytest --maxfail=1 --disable-warnings -q
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/test:/app/test
+      - .env:/app/.env
+    depends_on:
+      - backend
+      - mysql
+      - redis
+    profiles:
+      - test
+
   mysql:
     image: mysql:latest
     container_name: mysql_db

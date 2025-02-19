@@ -9,14 +9,19 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "aiomysql>=0.2.0",
-    "aioredis>=2.0.1",
     "cryptography>=44.0.1",
     "fastapi[standard]>=0.115.8",
+    "httpx>=0.28.1",
     "loguru>=0.7.3",
     "pydantic-settings>=2.7.1",
-    "pymysql>=1.1.1",
-    "pytest-asyncio>=0.25.3",
     "redis>=5.2.1",
     "sqlalchemy>=2.0.38",
     "uvicorn>=0.34.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-asyncio>=0.25.3",
+    "pytest-cov>=6.0.0",
 ]
