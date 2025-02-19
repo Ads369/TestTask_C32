@@ -1,3 +1,4 @@
+from pydantic import HttpUrl
 from pydantic_settings import BaseSettings
 
 
@@ -40,7 +41,14 @@ class RedisSettings(BaseSettings):
         return f"{scheme}://{auth}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
 
-class Settings(DatabaseSettings, RedisSettings, BaseSettings):
+class ExternalSettings(BaseSettings):
+    EXTERNAL_API_TIMEOUT: int = 10
+    EXTERNAL_API_MAX_RETRIES: int = 2
+    USER_AGENT: str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
+    CBR_API_URL: HttpUrl = HttpUrl("https://www.cbr-xml-daily.ru/")
+
+
+class Settings(DatabaseSettings, RedisSettings, ExternalSettings, BaseSettings):
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"  # DEBUG, WARNING, ERROR
     ENVIRONMENT: str = "development"  #  production

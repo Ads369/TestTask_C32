@@ -21,3 +21,8 @@ class RedisConnectionError(HTTPException):
 class RedisDataError(HTTPException):
     def __init__(self, message: str):
         super().__init__(status_code=503, detail=f"Redis data error: {message}")
+
+
+class ExternalAPIClientError(HTTPException):
+    def __init__(self, message: str):
+        super().__init__(status_code=503, detail="Max retries exceeded")
