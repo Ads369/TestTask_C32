@@ -1,42 +1,69 @@
-# tests/conftest.py
-from typing import AsyncGenerator
+# import pytest
+# import pytest_asyncio
+# from app.api.dependencies.databas import get_async_db
+# from app.db.base import Base
+# from app.main import app
+# from httpx import AsyncClient
+# from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+# from sqlalchemy.orm import sessionmaker
 
+# TEST_DATABASE_URL = "mysql+aiomysql://user:password@mysql_db/testdb"
+
+# engine = create_async_engine(TEST_DATABASE_URL)
+# TestingSessionLocal = sessionmaker(
+#     autocommit=False, autoflush=False, bind=engine, class_=AsyncSession
+# )
+
+
+# @pytest_asyncio.fixture(scope="session")
+# async def initialize_db():
+#     async with engine.begin() as conn:
+#         await conn.run_sync(Base.metadata.drop_all)
+#         await conn.run_sync(Base.metadata.create_all)
+#     yield
+#     async with engine.begin() as conn:
+#         await conn.run_sync(Base.metadata.drop_all)
+
+
+# @pytest_asyncio.fixture
+# async def session(initialize_db) -> AsyncSession:
+#     async with TestingSessionLocal() as session:
+#         yield session
+#         await session.rollback()
+
+
+# @pytest_asyncio.fixture
+# async def client(session: AsyncSession) -> AsyncClient:
+#     async def override_get_db():
+#         yield session
+
+#     app.dependency_overrides[get_async_db] = override_get_db
+#     async with AsyncClient(app=app, base_url="http://test") as ac:
+#         yield ac
+#     app.dependency_overrides.clear()
+#
 import pytest
-from app.db.mysql import AsyncSessionLocal
-from sqlalchemy.ext.asyncio import AsyncSession
+import pytest_asyncio
+from app.main import app
+
+from .utils import ClientManagerType, client_manager
 
 
-@pytest.fixture(scope="function")
-async def async_session() -> AsyncGenerator[AsyncSession, None]:
-    """
-    Provide a transactional scope around a series of operations.
-    For a real-world application, consider creating a separate test database.
-    """
-    async with AsyncSessionLocal() as session:
-        yield session
-        # Optionally, you might want to rollback after each test to ensure a clean state:
-        await session.rollback()
+@pytest_asyncio.fixture(scope="module")
+async def async_client() -> ClientManagerType:
+    async with client_manager(app) as c:
+        yield c
 
 
-### Skip integration test by default
-def pytest_addoption(parser):
-    parser.addoption(
-        "--run-integration",
-        action="store_true",
-        default=False,
-        help="run integration tests",
-    )
+@pytest.fixture(scope="module")
+def anyio_backend() -> str:
+    return "asyncio"
 
 
-def pytest_configure(config):
-    config.addinivalue_line("markers", "integration: mark test as integration test")
-
-
-def pytest_collection_modifyitems(config, items):
-    if not config.getoption("--run-integration"):
-        skip_integration = pytest.mark.skip(
-            reason="need --run-integration option to run"
-        )
-        for item in items:
-            if "integration" in item.keywords:
-                item.add_marker(skip_integration)
+# @pytest_asyncio.fixture(autouse=True)
+# async def clean_db():
+#     """
+#     Фикстура для очистки базы данных перед каждым тестом, чтобы тесты были независимыми.
+#     """
+#     for model in Tortoise.apps.get("models", {}).values():
+#         await model.all().delete()

@@ -1,27 +1,32 @@
-from pydantic import BaseModel, ConfigDict
+from typing import Optional
 
-
-class PackageBase(BaseModel):
-    name: str
-    weight: float
-    type_id: int
-    content_cost: float
-
-
-class PackageCreate(PackageBase):
-    pass
-
-
-class Package(PackageBase):
-    id: int
-    delivery_cost: float | None
-    type_name: str
-
-    model_config = ConfigDict(from_attributes=True)
+from pydantic import BaseModel, ConfigDict, Field, PositiveFloat
 
 
 class PackageType(BaseModel):
     id: int
     name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PackageBase(BaseModel):
+    name: str = Field(..., max_length=255)
+    weight: PositiveFloat
+    type_id: int
+    content_cost: PositiveFloat = Field(gt=0)
+
+
+class PackageCreate(PackageBase):
+    user_session: Optional[str] = None
+
+
+class PackageUpdate(PackageBase):
+    delivery_cost: Optional[PositiveFloat] = None
+
+
+class PackageOut(BaseModel):
+    id: int
+    # type: PackageType
 
     model_config = ConfigDict(from_attributes=True)

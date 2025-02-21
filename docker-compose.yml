@@ -21,10 +21,10 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    command: pytest --maxfail=1 --disable-warnings -q
+    command: pytest tests/api --maxfail=1 --disable-warnings -v
     volumes:
       - ./backend/app:/app/app
-      - ./backend/test:/app/test
+      - ./backend/tests:/app/tests
       - .env:/app/.env
     depends_on:
       - backend

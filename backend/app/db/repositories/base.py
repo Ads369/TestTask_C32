@@ -1,73 +1,133 @@
 from abc import ABC, abstractmethod
 from typing import Any, Generic, List, Optional, TypeVar
 
-# T represents the model type (e.g., a SQLAlchemy model)
-T = TypeVar("T")
-# CreateSchemaType and UpdateSchemaType can represent the Pydantic schemas
-CreateSchemaType = TypeVar("CreateSchemaType")
-UpdateSchemaType = TypeVar("UpdateSchemaType")
+from pydantic import BaseModel
+from sqlalchemy.orm import DeclarativeBase
+
+# Define more specific type variables
+ModelType = TypeVar("ModelType", bound=DeclarativeBase)
+OutputSchemaType = TypeVar("OutputSchemaType", bound=BaseModel)
+CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
+UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
-class BaseRepository(ABC, Generic[T, CreateSchemaType, UpdateSchemaType]):
+class BaseReadRepository(ABC, Generic[ModelType, OutputSchemaType]):
     """
-    Abstract base repository defining the interface for CRUD operations.
+    Base Repository for read operations.
 
-    Concrete repository implementations must implement the following methods:
-    - get: Retrieve a record by its ID.
-    - list: Retrieve multiple records with optional pagination.
-    - create: Create a new record using the provided input schema.
-    - update: Update an existing record with the provided data.
-    - delete: Delete a record by its ID.
+    Generic Parameters:
+        ModelType: SQLAlchemy model class
+        OutputSchemaType: Pydantic model for output data
     """
 
     @abstractmethod
-    def get(self, id: Any) -> Optional[T]:
+    async def get(self, id: Any) -> Optional[OutputSchemaType]:
         """
-        Retrieve a single record by its unique identifier.
+        Retrieve a single record by its ID.
 
-        :param id: The unique identifier of the record.
-        :return: The record if found, else None.
-        """
-        raise NotImplementedError
+        Args:
+            id: Primary key of the record
 
-    @abstractmethod
-    def list(self, skip: int = 0, limit: int = 100) -> List[T]:
+        Returns:
+            Optional[OutputSchemaType]: The found record as a Pydantic model or None
         """
-        Retrieve a list of records with pagination.
-
-        :param skip: The number of records to skip.
-        :param limit: The maximum number of records to return.
-        :return: A list of records.
-        """
-        raise NotImplementedError
+        pass
 
     @abstractmethod
-    def create(self, obj_in: CreateSchemaType) -> T:
+    async def list(self, skip: int = 0, limit: int = 100) -> List[OutputSchemaType]:
         """
-        Create a new record based on the provided input schema.
+        Retrieve multiple records with pagination.
 
-        :param obj_in: The input data for creating the record.
-        :return: The created record.
+        Args:
+            skip: Number of records to skip
+            limit: Maximum number of records to return
+
+        Returns:
+            List[OutputSchemaType]: List of records as Pydantic models
         """
-        raise NotImplementedError
+        pass
+
+
+class BaseWriteRepository(
+    ABC, Generic[ModelType, OutputSchemaType, CreateSchemaType, UpdateSchemaType]
+):
+    """
+    Base Repository for write operations.
+
+    Generic Parameters:
+        ModelType: SQLAlchemy model class
+        OutputSchemaType: Pydantic model for output data
+        CreateSchemaType: Pydantic model for creation data
+        UpdateSchemaType: Pydantic model for update data
+    """
 
     @abstractmethod
-    def update(self, db_obj: T, obj_in: UpdateSchemaType) -> T:
+    async def create(self, obj_in: CreateSchemaType) -> OutputSchemaType:
         """
-        Update an existing record with the provided data.
+        Create a new record.
 
-        :param db_obj: The existing record instance.
-        :param obj_in: The update data.
-        :return: The updated record.
+        Args:
+            obj_in: Pydantic model containing the data for creation
+
+        Returns:
+            OutputSchemaType: The created record as a Pydantic model
         """
-        raise NotImplementedError
+        pass
 
     @abstractmethod
-    def delete(self, id: Any) -> Optional[T]:
+    async def update(
+        self, db_obj: ModelType, obj_in: UpdateSchemaType
+    ) -> OutputSchemaType:
         """
-        Delete a record by its unique identifier.
+        Update an existing record.
 
-        :param id: The unique identifier of the record to delete.
-        :return: The deleted record if deletion was successful, else None.
+        Args:
+            db_obj: Existing database model instance
+            obj_in: Pydantic model containing the update data
+
+        Returns:
+            OutputSchemaType: The updated record as a Pydantic model
         """
-        raise NotImplementedError
+        pass
+
+    @abstractmethod
+    async def delete(self, id: Any) -> Optional[OutputSchemaType]:
+        """
+        Delete a record by its ID.
+
+        Args:
+            id: Primary key of the record to delete
+
+        Returns:
+            Optional[OutputSchemaType]: The deleted record as a Pydantic model or None
+        """
+        pass
+
+
+class BaseCRUDRepository(
+    BaseReadRepository[ModelType, OutputSchemaType],
+    BaseWriteRepository[
+        ModelType, OutputSchemaType, CreateSchemaType, UpdateSchemaType
+    ],
+    ABC,
+):
+    """
+    Base Repository combining both read and write operations for full CRUD functionality.
+
+    Generic Parameters:
+        ModelType: SQLAlchemy model class (must inherit from DeclarativeBase)
+        OutputSchemaType: Pydantic model for output data
+        CreateSchemaType: Pydantic model for creation data
+        UpdateSchemaType: Pydantic model for update data
+
+    Example:
+        class UserRepository(BaseCRUDRepository[
+            UserModel,           # SQLAlchemy model
+            UserSchema,          # Pydantic model for output
+            UserCreateSchema,    # Pydantic model for creation
+            UserUpdateSchema     # Pydantic model for updates
+        ]):
+            pass
+    """
+
+    pass

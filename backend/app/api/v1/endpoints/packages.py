@@ -1,50 +1,95 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from typing import List
 
-# from app.db.repositories.package_repository import PackageRepository
-# from app.schemas.package import Package, PackageCreate, PackageUpdate
-# from app.services.package_service import PackageService
-from app.api.v1.schemas.package import Package, PackageCreate
-from app.db.mysql import get_db
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.dependencies.auth import validate_user_session
+from app.api.dependencies.databas import get_async_db
+from app.api.v1.schemas.package import PackageCreate, PackageOut, PackageUpdate
+from app.db.repositories.package_repository import PackageRepository
+from app.services.package_service import PackageService
 
 router = APIRouter()
 
 
-def get_package_service(db: Session = Depends(get_db)):
-    package_repository = PackageRepository(db)
+def get_package_service(db: AsyncSession = Depends(get_async_db)):
+    package_repository = PackageRepository(session=db)
     return PackageService(package_repository)
 
 
-@router.post("/", response_model=Package)
-def create_package(
+@router.get("/packages", response_model=List[PackageOut])
+async def get_packages(
+    service: PackageService = Depends(get_package_service),
+    user_session: str = Depends(validate_user_session),
+    skip: int = 0,
+    limit: int = 100,
+) -> List[PackageOut]:
+    packages = await service.get_packages(user_session, skip=skip, limit=limit)
+    return packages
+
+
+@router.get("/packages/{package_id}", response_model=PackageOut)
+async def get_package(
+    package_id: int,
+    service: PackageService = Depends(get_package_service),
+    user_session: str = Depends(validate_user_session),
+):
+    package = await service.get_package_by_id(package_id, user_session)
+    if not package:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Package with ID {package_id} not found",
+        )
+    return package
+
+
+@router.post(
+    "/packages"
+    # , response_model=PackageOut, status_code=status.HTTP_201_CREATED
+)
+async def create_package(
     package: PackageCreate,
     service: PackageService = Depends(get_package_service),
+    user_session: str = Depends(validate_user_session),
 ):
-    return service.create_package(package)
+    try:
+        new_package = await service.create_package(package, user_session)
+        return new_package
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/{package_id}", response_model=Package)
-def read_package(
-    package_id: int, service: PackageService = Depends(get_package_service)
-):
-    db_package = service.get_package(package_id)
-    if db_package is None:
-        raise HTTPException(status_code=404, detail="Package not found")
-    return db_package
-
-
-@router.put("/{package_id}", response_model=Package)
-def update_package(
+@router.put("/packages/{package_id}", response_model=PackageOut)
+async def update_package(
     package_id: int,
-    package: PackageUpdate,
+    package_update: PackageUpdate,
     service: PackageService = Depends(get_package_service),
+    user_session: str = Depends(validate_user_session),
 ):
-    return service.update_package(package_id, package)
+    try:
+        updated_package = await service.update_package(
+            package_id, package_update, user_session
+        )
+        if not updated_package:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Package with ID {package_id} not found",
+            )
+        return updated_package
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.delete("/{package_id}")
-def delete_package(
-    package_id: int, service: PackageService = Depends(get_package_service)
+@router.delete("/packages/{package_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_package(
+    package_id: int,
+    service: PackageService = Depends(get_package_service),
+    user_session: str = Depends(validate_user_session),
 ):
-    service.delete_package(package_id)
-    return {"message": "Package deleted"}
+    deleted = await service.delete_package(package_id, user_session)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Package with ID {package_id} not found",
+        )
+    return None

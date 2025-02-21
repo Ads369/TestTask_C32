@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Union
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class HealthCheckResponse(BaseModel):

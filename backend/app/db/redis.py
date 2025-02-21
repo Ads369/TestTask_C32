@@ -4,7 +4,7 @@ import redis.asyncio as redis
 from redis.exceptions import ConnectionError
 
 from app.core.config import settings  # Assumes settings.REDIS_URL is defined
-from app.core.exceptions import RedisConnectionError, RedisDataError
+from app.core.exceptions import RedisError
 
 
 class RedisRepository:
@@ -22,7 +22,7 @@ class RedisRepository:
         try:
             await self._client.ping()
         except ConnectionError as e:
-            raise RedisConnectionError(f"Failed to connect to Redis: {e}")
+            raise RedisError(f"Failed to connect to Redis: {e}")
 
     async def get(self, key: str) -> Optional[str]:
         return await self._client.get(key)
