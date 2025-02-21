@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import Any, AsyncGenerator, TypedDict
 
 from app.core.config import settings
 
@@ -24,3 +24,8 @@ class CBRFClient(BaseAPIClient):
         response = await self.request("GET", "daily_json.js")
         usd_rate = response["Valute"]["USD"]["Value"]
         return CBRFResponse(Date=response["Date"], Valute=usd_rate)
+
+
+async def get_cbrf_client() -> AsyncGenerator[CBRFClient, Any]:
+    async with CBRFClient() as client:
+        yield client
