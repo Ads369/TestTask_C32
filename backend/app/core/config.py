@@ -41,14 +41,23 @@ class RedisSettings(BaseSettings):
         return f"{scheme}://{auth}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
 
-class ExternalSettings(BaseSettings):
+class CBRFSettings(BaseSettings):
     EXTERNAL_API_TIMEOUT: int = 10
     EXTERNAL_API_MAX_RETRIES: int = 2
     USER_AGENT: str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
     CBR_API_URL: HttpUrl = HttpUrl("https://www.cbr-xml-daily.ru/")
+    REDIS_DATA_KEY: str = "cbrf:daily_rates:data"
+    REDIS_USD_KEY: str = "cbrf:daily_rates:usd"
 
 
-class Settings(DatabaseSettings, RedisSettings, ExternalSettings, BaseSettings):
+class SesssionSetting(BaseSettings):
+    SESSION_COOKIE_NAME: str = "session_id"
+    SESSION_LIFETIME: int = 7 * 24 * 3600  # 7 дней
+    SESSION_COOKIE_SECURE: bool = True
+    SESSION_AUTO_CLEANUP: bool = True
+
+
+class Settings(DatabaseSettings, RedisSettings, CBRFSettings, BaseSettings):
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"  # DEBUG, WARNING, ERROR
     ENVIRONMENT: str = "development"  #  production

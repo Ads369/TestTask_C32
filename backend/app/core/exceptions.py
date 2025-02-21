@@ -1,28 +1,22 @@
-from fastapi import HTTPException
+class AppException(Exception):
+    """Base exception for application"""
+
+    status_code = 500
+    detail = "Internal Server Error"
 
 
-class DatabaseConnectionError(HTTPException):
-    def __init__(self):
-        super().__init__(status_code=503, detail="Database connection error")
+class DatabaseError(AppException):
+    """Raised when database connection fails"""
+
+    status_code = 503
+    detail = "Database error"
 
 
-class ConstraintViolationError(HTTPException):
-    def __init__(self, message: str):
-        super().__init__(
-            status_code=409, detail=f"Data constraint violation: {message}"
-        )
+class RedisError(AppException):
+    status_code = 503
+    detail = "Redis error"
 
 
-class RedisConnectionError(HTTPException):
-    def __init__(self):
-        super().__init__(status_code=503, detail="Redis connection error")
-
-
-class RedisDataError(HTTPException):
-    def __init__(self, message: str):
-        super().__init__(status_code=503, detail=f"Redis data error: {message}")
-
-
-class ExternalAPIClientError(HTTPException):
-    def __init__(self, message: str):
-        super().__init__(status_code=503, detail="Max retries exceeded")
+class ExternalAPIClientError(AppException):
+    status_code = 503
+    detail = "Max retries exceeded"
