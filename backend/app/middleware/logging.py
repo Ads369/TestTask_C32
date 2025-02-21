@@ -9,10 +9,11 @@ from app.core.logger import logger
 
 class LoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
+        # Generate uuid for each request
         request_id = str(uuid.uuid4())
         request.state.request_id = request_id
 
-        # Record the start time of the request
+        # Calculate RequestTime
         start_time = time.time()
         response = await call_next(request)
         process_time = time.time() - start_time
