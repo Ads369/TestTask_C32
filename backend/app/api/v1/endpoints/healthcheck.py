@@ -2,10 +2,10 @@ from fastapi import APIRouter, status
 from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.dependencies.databas import get_async_db
 from app.db.redis import RedisRepository, get_redis
 from app.schemas.healthcheck import HealthCheckResponse
 from app.services.health_checker import health_checker
-from app.api.dependencies.databas import get_async_db
 
 router = APIRouter()
 
